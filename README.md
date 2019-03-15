@@ -14,3 +14,4 @@
 ## References
 
 https://www.instructables.com/id/Tutorial-Using-HC06-Bluetooth-to-Serial-Wireless-U/
+https://github.com/jarzebski/Arduino-MPU6050
