@@ -43,6 +43,7 @@ float pitch = 0;
 float yaw = 0;
 /// ---> Orientation Controller Data <--- ///
 float tar_orient = 0;
+bool UseOriantationController = true;   // Use gyroscope data for mor accurate speed calculation
 // ---> Encoder 1 variables <--- //
 bool Cs1;
 bool Ls1;
@@ -147,8 +148,11 @@ void loop() {
   
   if (millis() - t0 > Ts)
   {
-    //OrientationController();
+    if (UseOriantationController)
+      OrientationController();
+
     SpeedControllers();
+    Serial.println(pitch);
   }
 
   MPUGetData();
@@ -336,7 +340,7 @@ void BluetoothHandler()
     a=(Serial.readString());
    
     int data = a.toInt();
-    Serial.println(data);
+    //Serial.println(data);
     
     if (data == 0)    // Stop
     {
@@ -422,6 +426,22 @@ void BluetoothHandler()
       tar_sp_2 = 250.0;
       sum1 = 0.0;
       sum2 = 0.0;
+      i = 0;
+    }
+    else                 // Deactivate/Activate Orientation Controller
+    {
+      if (data == 9)
+        UseOriantationController = false;
+      else if (data == 10)
+        UseOriantationController = false;
+      tar_sp_1 = 0;
+      tar_sp_2 = 0;
+      tar_orient =0;
+      roll = 0;
+      pitch = 0;
+      yaw = 0;
+      sum1 = 0;
+      sum2 = 0;
       i = 0;
     }
   }
