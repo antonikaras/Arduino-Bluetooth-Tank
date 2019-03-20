@@ -61,7 +61,7 @@ const float mult = (1000 / Ts) * 60;
 // ---> Controller 1 Data <--- //
 float tar_sp_1 = 0;   // Target Speed
 const float kp1 = 300;     // Kp gain for PID Controller 19.6569 20 300 21(smooth-slow)
-const float ki1 = 1500;      // Ki gain for PID Controller 379.5538 1500 3000 600(smooth-slow)
+const float ki1 = 3000;      // Ki gain for PID Controller 379.5538 1500 3000 600(smooth-slow)
 const float mult1 = (ki1 * (Ts / 1000.) - kp1);
 float u1 = 0;           // PID controller input
 float u_1 = 0;          // PID controller previous input
@@ -78,7 +78,7 @@ float y_2 = 0;          // PID controller previous output
 double sum2 = 0;
 //-------------------------------------------------------------------------------------------------
 //*************************************************************************************************
-const bool PrintData = false;
+const bool PrintData = true;
 //-------------------------------------------------------------------------------------------------
 //*************************************************************************************************
 //SoftwareSerial BT(txd_pin, rxd_pin); 
@@ -152,7 +152,7 @@ void loop() {
       OrientationController();
 
     SpeedControllers();
-    Serial.println(pitch);
+    //Serial.println(pitch);
   }
 
   MPUGetData();
@@ -297,23 +297,23 @@ void SpeedControllers()
   if (PrintData)
   {
     //Serial.print(i);
-    //Serial.print(" tar_sp_1 ");
+    /*Serial.print(" tar_sp_1 ");
     Serial.print(tar_sp_1);
     Serial.print(" tar_sp_2 ");
     Serial.print(tar_sp_2);
     /*Serial.print(" u1 ");
     Serial.print(u1);
     Serial.print(" u2 ");
-    Serial.print(u2);*/
+    Serial.print(u2);
     Serial.print(" y1 ");
     Serial.print(y1);
     Serial.print(" y2 ");
-    Serial.print(y2);
+    Serial.print(y2);*/
     /*Serial.print(" rpm1 ");
     Serial.print(rpm1);
     Serial.print(" rpm2 ");
     Serial.print(rpm2);*/
-    Serial.print(" rpm1_avg ");
+    /*Serial.print(" rpm1_avg ");
     Serial.print(sum1 / i);
     Serial.print(" rpm2_avg ");
     Serial.print(sum2 / i);
