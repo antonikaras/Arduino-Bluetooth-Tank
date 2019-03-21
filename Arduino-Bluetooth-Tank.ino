@@ -10,17 +10,17 @@
 //||---------------------------------------------------------------------------------------------||
 // ************** E N C O D E R   P I N S ************** //
 // ---> motor 1 (right) <---  //
-#define enc_1_1 12
-#define enc_1_2 13
+#define enc_1_1 3
+#define enc_1_2 11
 
 // ---> motor 2 (left) <---  //
-#define enc_2_1 10
-#define enc_2_2 11
+#define enc_2_1 2
+#define enc_2_2 10
 // ******** M O TO R    D R I V E R    P I N S ******** //
 // ---> motor 1 (right) <---  //
-#define pwm_1_1 3
-#define mot_1_1 2
-#define mot_1_2 4
+#define pwm_1_1 5
+#define mot_1_1 4
+#define mot_1_2 6
 
 // ---> motor 2 (left) <---  //
 #define pwm_2_1 9
@@ -29,8 +29,8 @@
 
 // ********** B L U E T O O T H    P I N S ********** //
 // ---> bluetooth <---
-#define rxd_pin 6
-#define txd_pin 5
+#define rxd_pin 1
+#define txd_pin 0
 //-------------------------------------------------------------------------------------------------
 // ---> MPU 6050 variables <--- //
 MPU6050 mpu;
@@ -43,15 +43,15 @@ float pitch = 0;
 float yaw = 0;
 /// ---> Orientation Controller Data <--- ///
 float tar_orient = 0;
-bool UseOriantationController = true;   // Use gyroscope data for mor accurate speed calculation
+bool UseOriantationController = false;   // Use gyroscope data for mor accurate speed calculation
 // ---> Encoder 1 variables <--- //
-bool Cs1;
-bool Ls1;
-float cnt1 = 0;
+volatile bool Cs1;
+volatile bool Ls1;
+volatile float cnt1 = 0;
 // ---> Encoder 2 variables <--- //
-bool Cs2;
-bool Ls2;
-float cnt2 = 0;
+volatile bool Cs2;
+volatile bool Ls2;
+volatile float cnt2 = 0;
 // ---> Controller constants <--- //
 float t0 = -1;
 float t1 = -1;
@@ -61,7 +61,7 @@ const float mult = (1000 / Ts) * 60;
 // ---> Controller 1 Data <--- //
 float tar_sp_1 = 0;   // Target Speed
 const float kp1 = 300;     // Kp gain for PID Controller 19.6569 20 300 21(smooth-slow)
-const float ki1 = 3000;      // Ki gain for PID Controller 379.5538 1500 3000 600(smooth-slow)
+const float ki1 = 2200;      // Ki gain for PID Controller 379.5538 1500 3000 600(smooth-slow)
 const float mult1 = (ki1 * (Ts / 1000.) - kp1);
 float u1 = 0;           // PID controller input
 float u_1 = 0;          // PID controller previous input
@@ -86,8 +86,8 @@ const bool PrintData = true;
 #define absf(x) ((x > 0) ? (x) : (-x))
 //-------------------------------------------------------------------------------------------------
 //*************************************************************************************************
-void ENC_1();                         // Read Encoder Data For Motor 1
-void ENC_2();                         // Read Encoder Data For Motor 2
+void ENC_1();                         // Interrupt Service Routine to read Encoder Data for Motor 1
+void ENC_2();                         // Interrupt Service Routine to read Encoder Data for Motor 2
 void MotorDriver(int sp1, int sp2);   // Send the speed and direction to each motor
 void BluetoothHandler();              // Connect with the bluetooth device and process data
 void SpeedControllers();              // Calculate the speed for each motor
@@ -98,9 +98,13 @@ void OrientationController();         // Compute the speed for each motor using 
 void setup()
 {
   // put your setup code here, to run once:
+    // Use interrupts to read the encoder values
+  attachInterrupt (digitalPinToInterrupt (enc_1_1), ENC_1, CHANGE);  // attach interrupt handler
+  attachInterrupt (digitalPinToInterrupt (enc_2_1), ENC_2, CHANGE);  // attach interrupt handler
+  
   Ls1 = digitalRead(enc_1_1);
   Ls2 = digitalRead(enc_2_1);
-  t0 = millis();
+  
 
   // Motor Driver Setup
   /// Motor 1 (right)
@@ -112,13 +116,9 @@ void setup()
   pinMode (mot_2_2, OUTPUT);
   pinMode (pwm_2_1, OUTPUT);
 
+  //Serial.begin (115200);
   Serial.begin (9600);
-/*
-  // Define Bluetooth interface
-  BT.begin(9600);
-  // Send test message to other device
-  BT.println("Hello from Arduino Bluetooth Tank");
-*/
+
   // Setup MPU6050
   /// Initialize MPU6050
   while(!mpu.begin(MPU6050_SCALE_2000DPS, MPU6050_RANGE_2G))
@@ -133,6 +133,7 @@ void setup()
   /// Set threshold sensivty. Default 3.
   mpu.setThreshold(3);
 
+  t0 = millis();
   t1 = t0;
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -140,9 +141,6 @@ void loop() {
   // put your main code here, to run repeatedly:
 
   float time0 = micros();
-
-  ENC_1();
-  ENC_2();
 
   BluetoothHandler();
   
@@ -160,7 +158,7 @@ void loop() {
 }
 //-------------------------------------------------------------------------------------------------
 //*************************************************************************************************
-// Read Encoder Data For Motor 1
+// Interrupt Service Routine to read Encoder Data for Motor 1
 void ENC_1()
 {
   Cs1 = digitalRead(enc_1_1);
@@ -174,7 +172,7 @@ void ENC_1()
   }
 }
 //+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-// Read Encoder Data For Motor 2
+// Interrupt Service Routine to read Encoder Data for Motor 2
 void ENC_2()
 {
   Cs2 = digitalRead(enc_2_1);
@@ -196,13 +194,13 @@ void MotorDriver(int sp1, int sp2)
   /// Send the Direction to the Driver
   if (sp1 > 0)
   {
-    digitalWrite(mot_1_1, LOW);
-    digitalWrite(mot_1_2, HIGH); 
-  }
-  else
-  {
-    digitalWrite(mot_1_1, HIGH);
-    digitalWrite(mot_1_2, LOW); 
+      digitalWrite(mot_1_1, HIGH);
+      digitalWrite(mot_1_2, LOW);
+    }
+    else
+    {
+      digitalWrite(mot_1_1, LOW);
+      digitalWrite(mot_1_2, HIGH);
     sp1 = - sp1;
   }
 
@@ -232,15 +230,15 @@ void SpeedControllers()
 { 
   // -----> M O T O R  1 (right) <----- //
   float rpm1 = mult * cnt1 / 40 * (millis() - t0) / Ts;
-  if (rpm1 > 500)
-    rpm1 = 420;
-  else if (rpm1 < -500)
-    rpm1 = -420;
+  if (rpm1 > 400)
+    rpm1 = 300;
+  else if (rpm1 < -400)
+    rpm1 = -300;
   
   cnt1 = 0;
   // ---> Controller 1 <--- //
-  float n_tar_sp_1 = mapf(tar_sp_1, 0, 420, 0, 1);
-  float n_rpm_1 = mapf(rpm1, 0, 420, 0, 1);
+  float n_tar_sp_1 = mapf(tar_sp_1, 0, 300, 0, 1);
+  float n_rpm_1 = mapf(rpm1, 0, 300, 0, 1);
 
   u1 = absf(n_tar_sp_1) - absf(n_rpm_1);
   float y1 = y_1 + kp1 * u1 + mult1 * u_1;
@@ -263,15 +261,15 @@ void SpeedControllers()
 
   // -----> M O T O R  2 <-----
   float rpm2 = mult  * cnt2 / 40 * (millis() - t0) / Ts;
-  if (rpm2 > 600)
-    rpm2 = 480;
-  else if (rpm2 < -600)
-    rpm2 = -480;
+  if (rpm2 > 400)
+    rpm2 = 325;
+  else if (rpm2 < -400)
+    rpm2 = -325;
   
   cnt2 = 0;
   // ---> Controller 2 <--- //
-  float n_tar_sp_2 = mapf(tar_sp_2, 0, 480, 0, 1);
-  float n_rpm2 = mapf(rpm2, 0, 480, 0, 1);
+  float n_tar_sp_2 = mapf(tar_sp_2, 0, 325, 0, 1);
+  float n_rpm2 = mapf(rpm2, 0, 325, 0, 1);
  
   u2 = absf(n_tar_sp_2) - absf(n_rpm2);
   float y2 = y_2 + kp2 * u2 + mult2 * u_2;
@@ -297,28 +295,28 @@ void SpeedControllers()
   if (PrintData)
   {
     //Serial.print(i);
-    /*Serial.print(" tar_sp_1 ");
+    Serial.print(" tar_sp_1 ");
     Serial.print(tar_sp_1);
     Serial.print(" tar_sp_2 ");
     Serial.print(tar_sp_2);
     /*Serial.print(" u1 ");
     Serial.print(u1);
     Serial.print(" u2 ");
-    Serial.print(u2);
+    Serial.print(u2);*/
     Serial.print(" y1 ");
     Serial.print(y1);
     Serial.print(" y2 ");
-    Serial.print(y2);*/
+    Serial.print(y2);
     /*Serial.print(" rpm1 ");
     Serial.print(rpm1);
     Serial.print(" rpm2 ");
     Serial.print(rpm2);*/
-    /*Serial.print(" rpm1_avg ");
+    Serial.print(" rpm1_avg ");
     Serial.print(sum1 / i);
     Serial.print(" rpm2_avg ");
     Serial.print(sum2 / i);
-    //Serial.print(" ");
-    //Serial.println(sum2 / sum1);
+    Serial.print(" rpm2 / rpm1 ");
+    Serial.print(sum2 / sum1);
     Serial.print(" Pitch = ");
     Serial.println(pitch);
   /*  Serial.print(" Roll = ");
@@ -359,8 +357,8 @@ void BluetoothHandler()
     else if (data == 1)   // GO FORWARD
     {
       tar_orient = 0.0;
-      tar_sp_1 = 300.0;
-      tar_sp_2 = 300.0;
+      tar_sp_1 = 250.0;
+      tar_sp_2 = 250.0;
       sum1 = 0.0;
       sum2 = 0.0;
       i = 0;
@@ -368,8 +366,8 @@ void BluetoothHandler()
     else if (data == 2)   // GO FORWARD-RIGHT
     {
       tar_orient = -45.0;
-      tar_sp_1 = 250.0;
-      tar_sp_2 = 300.0;
+      tar_sp_1 = 200.0;
+      tar_sp_2 = 250.0;
       sum1 = 0.0;
       sum2 = 0.0;
       i = 0;
@@ -377,8 +375,8 @@ void BluetoothHandler()
     else if (data == 3)   // ROTATE RIGHT
     {
       tar_orient = 90.0;
-      tar_sp_1 = -250.0;
-      tar_sp_2 = 250.0;
+      tar_sp_1 = -200.0;
+      tar_sp_2 = 200.0;
       sum1 = 0.0;
       sum2 = 0.0;
       i = 0;
@@ -386,8 +384,8 @@ void BluetoothHandler()
     else if (data == 4)   // GO BACKWARD-RIGHT
     {
       tar_orient = 135.0;
-      tar_sp_1 = -250.0;
-      tar_sp_2 = -300.0;
+      tar_sp_1 = -200.0;
+      tar_sp_2 = -250.0;
       sum1 = 0.0;
       sum2 = 0.0;
       i = 0;
@@ -395,8 +393,8 @@ void BluetoothHandler()
     else if (data == 5)   // GO BACKWARD
     {
       tar_orient = 180.0;
-      tar_sp_1 = -300.0;
-      tar_sp_2 = -300.0;
+      tar_sp_1 = -250.0;
+      tar_sp_2 = -250.0;
       sum1 = 0.0;
       sum2 = 0.0;
       i = 0;
@@ -404,8 +402,8 @@ void BluetoothHandler()
     else if (data == 6)   // GO BACKWARD-LEFT
     {
       tar_orient = 225.0;
-      tar_sp_1 = -300.0;
-      tar_sp_2 = -250.0;
+      tar_sp_1 = -250.0;
+      tar_sp_2 = -200.0;
       sum1 = 0.0;
       sum2 = 0.0;
       i = 0;
@@ -413,8 +411,8 @@ void BluetoothHandler()
     else if (data == 7)   // ROTATE LEFT
     {
       tar_orient = 270.0;
-      tar_sp_1 = 250.0;
-      tar_sp_2 = -250.0;
+      tar_sp_1 = 200.0;
+      tar_sp_2 = -200.0;
       sum1 = 0.0;
       sum2 = 0.0;
       i = 0;
@@ -422,8 +420,8 @@ void BluetoothHandler()
     else if (data == 8)   // GO FORWARD-LEFT
     {
       tar_orient = 45.0;
-      tar_sp_1 = 300.0;
-      tar_sp_2 = 250.0;
+      tar_sp_1 = 250.0;
+      tar_sp_2 = 200.0;
       sum1 = 0.0;
       sum2 = 0.0;
       i = 0;
@@ -468,18 +466,18 @@ void OrientationController()
     float error = (tar_orient - pitch) / (90 - abs(tar_orient));
     if (error > 0.01)
     {
-      tar_sp_1 = max((1 - error), error) * 50 + 250;   // right motor speed
-      tar_sp_2 = min((1 - error), error) * 50 + 250;   // left motor speed
+      tar_sp_1 = max((1 - error), error) * 50 + 200;   // right motor speed
+      tar_sp_2 = min((1 - error), error) * 50 + 200;   // left motor speed
     }
     else if (error < -0.01)
     {
-      tar_sp_1 = min((1 + error), -error) * 50 + 250;  // right motor speed
-      tar_sp_2 = max((1 + error), -error) * 50 + 250;  // left motor speed
+      tar_sp_1 = min((1 + error), -error) * 50 + 200;  // right motor speed
+      tar_sp_2 = max((1 + error), -error) * 50 + 200;  // left motor speed
     }
     else
     {
-      tar_sp_1 = 300;
-      tar_sp_2 = 300; 
+      tar_sp_1 = 250;
+      tar_sp_2 = 250; 
     }
   }
 
@@ -490,18 +488,18 @@ void OrientationController()
     float error = (tmp_tar_orient - pitch) / (90 - tmp_tar_orient);
     if (error > 0.01)
     {
-      tar_sp_1 = -(max((1 - error), error) * 50 + 250);   // right motor speed
-      tar_sp_2 = -(min((1 - error), error) * 50 + 250);   // left motor speed
+      tar_sp_1 = -(max((1 - error), error) * 50 + 200);   // right motor speed
+      tar_sp_2 = -(min((1 - error), error) * 50 + 200);   // left motor speed
     }
     else if (error < -0.01)
     {
-      tar_sp_1 = -(min((1 + error), -error) * 50 + 250);  // right motor speed
-      tar_sp_2 = -(max((1 + error), -error) * 50 + 250);  // left motor speed
+      tar_sp_1 = -(min((1 + error), -error) * 50 + 200);  // right motor speed
+      tar_sp_2 = -(max((1 + error), -error) * 50 + 200);  // left motor speed
     }
     else
     {
-      tar_sp_1 = -300;
-      tar_sp_2 = -300; 
+      tar_sp_1 = -250;
+      tar_sp_2 = -250; 
     }
   }
 }
