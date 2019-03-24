@@ -3,7 +3,7 @@
 ## Pin-Out
 	
 	* Arduino Pin 0  <---> HC-06 TXD
-      * Arduino Pin 1  <---> HC-06 RXD
+     * Arduino Pin 1  <---> HC-06 RXD
 	* Arduino Pin 2  <---> Endoder 2 - Data
 	* Arduino Pin 3  <---> Endoder 1 - Data
 	* Arduino Pin 4  <---> L293D pin 2
@@ -22,7 +22,7 @@
 	
 ## Robot Description
 
-The robot consists of two 12V DC motors with gears in order to reduce the rpm. The driver used to controlled the motors is a L293D H-Bridge Using a linear rotary encoder to each motor we can use its values as feedback and create a PI controller. With the help of HC-06 we can connect our mobile phone or PC with the Arduino and controll the vehicle. Finally, using GY-521 we can use the orientation data to correct the vehicles orientation/trajectory.
+The robot consists of two 12V DC motors with gears in order to reduce the rpm. The driver used to controlle the motors is a L293D H-Bridge. Using a linear rotary encoder to each motor we can use its values as feedback and create a PI controller. With the help of HC-06 we can connect our mobile phone or PC with the Arduino and controll the vehicle. Finally, using GY-521 we can use the orientation data to correct the vehicles orientation/trajectory.
 
 ## Mobile controlled tank
 
