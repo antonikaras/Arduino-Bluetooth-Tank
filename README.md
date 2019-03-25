@@ -3,7 +3,7 @@
 ## Pin-Out
 	
 	* Arduino Pin 0  <---> HC-06 TXD
-     * Arduino Pin 1  <---> HC-06 RXD
+    * Arduino Pin 1  <---> HC-06 RXD
 	* Arduino Pin 2  <---> Endoder 2 - Data
 	* Arduino Pin 3  <---> Endoder 1 - Data
 	* Arduino Pin 4  <---> L293D pin 2
