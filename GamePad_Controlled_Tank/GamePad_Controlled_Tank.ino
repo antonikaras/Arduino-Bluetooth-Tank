@@ -73,7 +73,7 @@ double sum2 = 0;
 float mot_2_max_rpm;                            // Maximum rpm for motor 2 (depends on battery voltage)
 //-------------------------------------------------------------------------------------------------
 //*************************************************************************************************
-const bool PrintData = true;
+const bool PrintData = false;
 bool UseOriantationController = false;           // Use gyroscope data for mor accurate speed calculation
 //-------------------------------------------------------------------------------------------------
 //*************************************************************************************************
@@ -333,25 +333,34 @@ void BluetoothHandler()
    
     long data = a.toInt();
     Serial.println(data);
-    if ((data > 100100) && (data < 500000))
+    if ((data > 100000) && (data < 500000))
     {
-      int rt = data % 1000 - 101 - 128;
-      int lt = data / 1000 - 101 - 128;
+      int rt = ((data % 1000) - 100) - 128;
+      int lt = ((data / 1000) - 100) - 128;
       
       if ((absf(rt) > 5) && (absf(rt) < 130))
-        tar_sp_1 = rt;
+        tar_sp_1 = -rt;
       else 
         tar_sp_1 = 0;
         
-      if ((absf(rt) > 5) && (absf(lt) < 130))
-        tar_sp_2 = lt;
+      if ((absf(lt) > 5) && (absf(lt) < 130))
+        tar_sp_2 = -lt;
       else 
         tar_sp_2 = 0;  
-      Serial.print(data);
-      Serial.print(" rt ");
-      Serial.print(rt);
-      Serial.print(" lt ");
-      Serial.println(lt);
+
+      if (PrintData)
+      {
+        Serial.print(data);
+        Serial.print(" rt ");
+        Serial.print(rt);
+        Serial.print(" tar_sp_1 ");
+        Serial.print(tar_sp_1);
+        Serial.print(" lt ");
+        Serial.print(lt);
+        Serial.print(" tar_sp_2 ");
+        Serial.println(tar_sp_2);
+      }
+      
     }
   }
 }

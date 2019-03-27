@@ -1,13 +1,14 @@
+#!/usr/bin/python
+
 import bluetooth as blt
 from inputs import get_gamepad
 import time, sys
-from termios import tcflush, TCIFLUSH
 
-class Controller(object):
+class GamePadController(object):
 
-    _lt = -1        # left track
-    _rt = -1        # right track
-    _orient = -1    # orientation
+    _lt = 128        # left track
+    _rt = 128        # right track
+    _orient = -1     # orientation
     _exit = False
 
     def __init__(self):
@@ -38,9 +39,11 @@ class Controller(object):
     ###############################################################################################
 
     def ReadGamepadData(self):
-        events = get_gamepad()
-        for event in events:
 
+        events = get_gamepad()
+        #print(len(events))
+        for event in events:
+            #print(event.code)
             if (event.code == "ABS_Y"):
                 self._lt = event.state
                 #print("lt", self._lt)
@@ -56,27 +59,34 @@ class Controller(object):
 
     def SendData(self):
 
-        data = (self._lt + 101) * 1000 + (self._rt + 101)
-        
-        self._client_socket.send(str(data))
+        data = (self._lt + 100) * 1000 + (self._rt + 100)
         print(self._lt, self._rt, data)
+   
+        self._client_socket.send(str(data))
+        #time.sleep(5 * 10e-3)           # Sychronize with the Arduino Bluetooth Timeout
         
     ###############################################################################################
 
     def Disconnect(self):
         self._client_socket.close()
 
+    def Controller(self):
+        self.Connect()
+        while not self._exit:
+
+            t0 = time.time()
+            while (time.time() - t0 < 0.05):
+                self.ReadGamepadData()
+                #print("time - t0 ?", time.time() - t0)
+            self.SendData()
+
+
+        self.Disconnect()
+
 ###################################################################################################
 
 
-cont = Controller()
+cont = GamePadController()
 
 if (__name__ == '__main__'):
-    cont.Connect()
-    while not cont._exit:
-        cont.ReadGamepadData()
-        cont.SendData()
-        time.sleep(50 * 10e-3)           # Sychronize with the Arduino Bluetooth Timeout
-        tcflush(sys.stdin, TCIFLUSH)    # Delete gamepad inputs
-
-    cont.Disconnect()
+    cont.Controller()
