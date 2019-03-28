@@ -33,7 +33,7 @@ class GamePadController(object):
         # Connect to device
         self._client_socket.connect((self._nearby_devices[nb][0], 1))
 
-        print("Device :", self._nearby_devices[nb][1], " Connevted Successfully !!!")
+        print("Device :", self._nearby_devices[nb][1], " Connected Successfully !!!")
 
 
     ###############################################################################################
