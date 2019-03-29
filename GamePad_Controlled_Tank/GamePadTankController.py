@@ -4,20 +4,25 @@ import bluetooth as blt
 from inputs import get_gamepad
 import time, sys
 
+###################################################################################################
+
 class GamePadController(object):
 
     _lt = 128        # left track
     _rt = 128        # right track
-    _orient = -1     # orientation
     _exit = False
 
+    #---------------------------------------------------------------------------------------------#
+   
+    # Initiallize class/ bluetooth interface
     def __init__(self):
         print("Welcome to GamePad Tank Controller")
         print("Searching for nearby bluetooth devices")
         self._nearby_devices = blt.discover_devices(lookup_names=True)
 
-    ###############################################################################################
+    #---------------------------------------------------------------------------------------------#
 
+    # Connect with the HC-05/06 bluetooth module
     def Connect(self):
         print("Choose a device to connect")
         # Print the addresses and names of the nearby devices
@@ -33,10 +38,10 @@ class GamePadController(object):
         # Connect to device
         self._client_socket.connect((self._nearby_devices[nb][0], 1))
 
-        print("Device :", self._nearby_devices[nb][1], " Connevted Successfully !!!")
+        print("Device :", self._nearby_devices[nb][1], " Connected Successfully !!!")
 
 
-    ###############################################################################################
+    #---------------------------------------------------------------------------------------------#
 
     def ReadGamepadData(self):
 
@@ -55,8 +60,9 @@ class GamePadController(object):
             if (event.code == "BTN_TR2"):
                 self._exit = True
 
-    ###############################################################################################
-
+    #---------------------------------------------------------------------------------------------#
+    
+    # Send 'Compressed' speed data to the arduino
     def SendData(self):
 
         data = (self._lt + 100) * 1000 + (self._rt + 100)
@@ -65,10 +71,13 @@ class GamePadController(object):
         self._client_socket.send(str(data))
         #time.sleep(5 * 10e-3)           # Sychronize with the Arduino Bluetooth Timeout
         
-    ###############################################################################################
+    #---------------------------------------------------------------------------------------------#
 
+    # Disconnect from the HC-05/06 module and terminate the app
     def Disconnect(self):
         self._client_socket.close()
+    
+    #---------------------------------------------------------------------------------------------#
 
     def Controller(self):
         self.Connect()
@@ -85,8 +94,7 @@ class GamePadController(object):
 
 ###################################################################################################
 
-
-cont = GamePadController()
-
 if (__name__ == '__main__'):
+    
+    cont = GamePadController()
     cont.Controller()
